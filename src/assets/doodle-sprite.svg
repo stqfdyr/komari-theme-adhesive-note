@@ -1,0 +1,143 @@
+<svg xmlns="http://www.w3.org/2000/svg">
+
+<!--
+  手绘图标。
+
+  按效果图逐个重绘。与常见线性图标集有两点关键差别，也正是"手绘"与"UI 图标"
+  的分水岭：
+
+  1. **描边有轻重**。效果图的外轮廓约占图标宽度的 7%~8%，内部结构再轻一档；
+     轮廓过重会像 UI 图标盖在纸上，过轻又会丢掉铅笔反复描过的手感。
+  2. **主次分层**。外轮廓最粗、内部结构次之、装饰细节最细——一支笔画东西时手上
+     的力道本来就是这么分配的，所有线同宽反而假。
+
+  不规则直接固化在路径坐标中，不使用运行时 SVG 位移滤镜。30 节点时一个共享滤镜
+  会展开成数百个滤镜实例，任何数值更新都可能让整墙重新栅格化。
+-->
+
+<!-- CPU：芯片本体 + 四边各四根引脚 + 内框里的小记号 -->
+<symbol id="icon-cpu" viewBox="0 0 24 24">
+  <g fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M8 5.2C6.2 5.2 5.3 6.4 5.5 8.1l-.2 7.8c0 1.8 1.2 2.8 2.8 2.6l8.1.2c1.7-.1 2.6-1.3 2.4-2.9l.1-7.9c-.1-1.7-1.2-2.6-2.8-2.5Z" stroke-width="1.9"/>
+    <path d="M10.2 8.8c-.8.1-1.2.5-1.1 1.3l-.1 3.8c0 .8.5 1.3 1.2 1.2l3.6.2c.8-.1 1.2-.6 1.1-1.3l.1-4c-.1-.8-.5-1.2-1.3-1.1Z" stroke-width="1.2"/>
+    <path d="M12 10.4a1.15 1.15 0 1 1 0 2.3a1.15 1.15 0 1 0 0 2.3" stroke-width="1"/>
+    <g stroke-width="1.5">
+      <path d="M8.2 5.4V2.6M10.9 5.4V2.6M13.6 5.4V2.6M16.3 5.4V2.6"/>
+      <path d="M8.2 18.6v2.8M10.9 18.6v2.8M13.6 18.6v2.8M16.3 18.6v2.8"/>
+      <path d="M5.4 8.2H2.6M5.4 10.9H2.6M5.4 13.6H2.6M5.4 16.3H2.6"/>
+      <path d="M18.6 8.2h2.8M18.6 10.9h2.8M18.6 13.6h2.8M18.6 16.3h2.8"/>
+    </g>
+  </g>
+</symbol>
+
+<!-- 内存：横置模组，三颗芯片，上下两排触点 -->
+<symbol id="icon-memory" viewBox="0 0 24 24">
+  <g fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M3.8 6.4c-1.5-.1-2.3.8-2.2 2.2l-.1 6.9c.1 1.4.9 2.2 2.3 2.1l16.5.2c1.4-.1 2.2-.9 2.1-2.3l.1-6.9c-.1-1.5-.9-2.2-2.3-2.1Z" stroke-width="1.85"/>
+    <circle cx="6.6" cy="12" r="2.25" stroke-width="1.25"/>
+    <circle cx="12" cy="12" r="2.25" stroke-width="1.25"/>
+    <circle cx="17.4" cy="12" r="2.25" stroke-width="1.25"/>
+    <path d="M4 8.6h1.6M7 8.6h1.6M10 8.6h1.6M13 8.6h1.6M16 8.6h1.6M19 8.6h1" stroke-width="1"/>
+    <path d="M4 15.4h1.6M7 15.4h1.6M10 15.4h1.6M13 15.4h1.6M16 15.4h1.6M19 15.4h1" stroke-width="1"/>
+  </g>
+</symbol>
+
+<!-- 磁盘：三层圆柱 -->
+<symbol id="icon-disk" viewBox="0 0 24 24">
+  <g fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+    <ellipse cx="12" cy="5.6" rx="7.6" ry="3.1" stroke-width="1.8"/>
+    <path d="M4.4 5.6v12.8c0 1.7 3.4 3.1 7.6 3.1s7.6-1.4 7.6-3.1V5.6" stroke-width="1.8"/>
+    <path d="M4.4 10.1c0 1.7 3.4 3.1 7.6 3.1s7.6-1.4 7.6-3.1" stroke-width="1.35"/>
+    <path d="M4.4 14.5c0 1.7 3.4 3.1 7.6 3.1s7.6-1.4 7.6-3.1" stroke-width="1.35"/>
+  </g>
+</symbol>
+
+<!-- 负载：仪表盘。开口朝下的弧、两点刻度、一根带轴心的指针 -->
+<symbol id="icon-load" viewBox="0 0 24 24">
+  <g fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M3.3 19.4A9.4 9.4 0 1 1 20.7 19.4" stroke-width="1.8"/>
+    <path d="M3.3 19.4c1.1-.7 2-1.5 2.4-2.6M20.7 19.4c-1.1-.7-2-1.5-2.4-2.6" stroke-width="1.3"/>
+    <circle cx="8.4" cy="8.6" r=".95" fill="currentColor" stroke="none"/>
+    <circle cx="12.6" cy="6.3" r=".95" fill="currentColor" stroke="none"/>
+    <path d="M9.7 17.6 17 8.9" stroke-width="1.5"/>
+    <circle cx="9.5" cy="17.9" r="1.75" stroke-width="1.25"/>
+  </g>
+</symbol>
+
+<!-- 地球：赤道 + 两条经线 -->
+<symbol id="icon-globe" viewBox="0 0 24 24">
+  <g fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M21.4 12.1c-.1 5.3-4 9.3-9.3 9.4-5.4-.2-9.4-4.1-9.5-9.4.1-5.4 4-9.4 9.4-9.6 5.2.2 9.3 4.2 9.4 9.6Z" stroke-width="1.8"/>
+    <path d="M2.6 12h18.8" stroke-width="1.45"/>
+    <path d="M12 2.5C7.1 6.9 7.1 17.1 12 21.5" stroke-width="1.35"/>
+    <path d="M12 2.5c4.9 4.4 4.9 14.6 0 19" stroke-width="1.35"/>
+  </g>
+</symbol>
+
+<!-- 时钟 -->
+<symbol id="icon-clock" viewBox="0 0 24 24">
+  <g fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M21.1 12.1c-.1 5.1-3.9 9-9 9.1-5.2-.1-9.1-3.9-9.3-9.1.2-5.2 4-9.1 9.2-9.3 5.1.2 8.9 4 9.1 9.3Z" stroke-width="1.8"/>
+    <path d="M12 5.8V12l4.6 3.7" stroke-width="1.65"/>
+  </g>
+</symbol>
+
+<!-- 上下行箭头：主笔画故意略弯，箭头两翼不对称，再叠一层轻擦痕模拟重复描线 -->
+<symbol id="icon-upload" viewBox="0 0 24 24">
+  <g fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M12.4 21.1c-.2-4.7.1-11.7-.3-17" stroke-width="2.05"/>
+    <path d="M5.6 10.5c2.1-2.3 4.4-4.9 6.5-7 1.8 2.1 4.6 4.8 6.4 7.3" stroke-width="2.18"/>
+    <path d="M11.65 20.5c.15-4.3-.08-10.1.17-14.8M6.4 10.2c1.8-2 3.8-4 5.4-5.7" stroke-width=".72" opacity=".42"/>
+  </g>
+</symbol>
+
+<symbol id="icon-download" viewBox="0 0 24 24">
+  <g fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M11.8 2.9c.3 4.8-.1 11.8.3 17" stroke-width="2.05"/>
+    <path d="M5.5 13.4c2.2 2.5 4.5 4.9 6.6 7.1 1.9-2.2 4.5-4.8 6.5-7.4" stroke-width="2.18"/>
+    <path d="M12.5 3.6c-.17 4.2.08 10.1-.18 14.7M17.8 13.6c-1.7 2-3.7 4.1-5.4 5.9" stroke-width=".72" opacity=".42"/>
+  </g>
+</symbol>
+
+<symbol id="icon-status" viewBox="0 0 24 24">
+  <g fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+    <circle cx="12" cy="12" r="6.4" stroke-width="1.7"/>
+    <circle cx="12" cy="12" r="2.3" fill="currentColor" stroke="none"/>
+  </g>
+</symbol>
+
+<symbol id="icon-calendar" viewBox="0 0 24 24">
+  <g fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+    <rect x="3" y="5.2" width="18" height="15.8" rx="2.2" stroke-width="1.8"/>
+    <path d="M7.4 2.8v4.6M16.6 2.8v4.6" stroke-width="1.55"/>
+    <path d="M3 10.4h18" stroke-width="1.45"/>
+  </g>
+</symbol>
+
+<symbol id="icon-uptime" viewBox="0 0 24 24">
+  <g fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M20.4 6.6v5.2h-5.2" stroke-width="1.55"/>
+    <path d="M19.4 11.8A7.4 7.4 0 1 1 17.2 6.6" stroke-width="1.7"/>
+    <path d="M12 7.8v4.4l3.1 2" stroke-width="1.5"/>
+  </g>
+</symbol>
+
+<symbol id="icon-server" viewBox="0 0 24 24">
+  <g fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+    <rect x="3.4" y="3.8" width="17.2" height="6.6" rx="2" stroke-width="1.8"/>
+    <rect x="3.4" y="13.6" width="17.2" height="6.6" rx="2" stroke-width="1.8"/>
+    <circle cx="7.6" cy="7.1" r="1.15" fill="currentColor" stroke="none"/>
+    <circle cx="7.6" cy="16.9" r="1.15" fill="currentColor" stroke="none"/>
+  </g>
+</symbol>
+
+<symbol id="icon-network" viewBox="0 0 24 24">
+  <g fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+    <circle cx="5.6" cy="18.2" r="2.4" stroke-width="1.65"/>
+    <circle cx="12" cy="5.6" r="2.4" stroke-width="1.65"/>
+    <circle cx="18.4" cy="18.2" r="2.4" stroke-width="1.65"/>
+    <path d="M6.7 15.9 10.9 7.9M13.1 7.9l4.2 8M8 18.2h8" stroke-width="1.45"/>
+  </g>
+</symbol>
+
+</svg>

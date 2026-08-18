@@ -1,0 +1,86 @@
+name: Release
+
+# 打 v* 标签即发布：构建 → 打包 → 附带 SHA-256 上传到 Release。
+# 主题市场收录时需要 ZIP 的下载地址与 SHA-256 校验值。
+on:
+  push:
+    tags:
+      - "v*"
+  # 允许手动跑一次，用于验证流程本身
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Build
+        run: npm run build
+
+      - name: Verify theme contract
+        # index.html 里这几处内容是 Komari 用来做字符串替换的锚点，
+        # 少一处对应的自定义标题/描述/头部/底部注入就会静默失效。
+        run: |
+          set -e
+          for pattern in \
+            '<title>Komari Monitor</title>' \
+            'A simple server monitor tool.' \
+            '<html lang="en">'
+          do
+            if ! grep -qF "$pattern" dist/index.html; then
+              echo "::error::dist/index.html 缺少必需内容: $pattern"
+              exit 1
+            fi
+          done
+          # Go 的 embed 会忽略下划线开头的文件
+          if find dist -name '_*' | grep -q .; then
+            echo "::error::产物中存在以 _ 开头的文件，会被 go embed 忽略"
+            exit 1
+          fi
+          # 包内 manifest 的版本必须与 tag 一致，否则主题市场的自动更新会拒绝
+          if [ "${GITHUB_REF_TYPE}" = "tag" ]; then
+            manifest_version=$(node -p "require('./komari-theme.json').version")
+            tag_version="${GITHUB_REF_NAME#v}"
+            if [ "$manifest_version" != "$tag_version" ]; then
+              echo "::error::komari-theme.json 的 version ($manifest_version) 与 tag ($tag_version) 不一致"
+              exit 1
+            fi
+          fi
+
+      - name: Package
+        run: npm run package
+
+      - name: Show checksum
+        run: cat theme-package/*.zip.sha256
+
+      - name: Create release
+        if: github.ref_type == 'tag'
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            theme-package/*.zip
+            theme-package/*.zip.sha256
+          generate_release_notes: true
+          body_path: ${{ github.workspace }}/.github/release-body.md
+
+      - name: Upload artifact
+        if: github.ref_type != 'tag'
+        uses: actions/upload-artifact@v4
+        with:
+          name: theme-package
+          path: theme-package/

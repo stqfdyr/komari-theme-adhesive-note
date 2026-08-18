@@ -1,0 +1,1672 @@
+@import "tailwindcss";
+
+/**
+ * 便利贴主题的设计令牌与视觉实现。
+ *
+ * 分工：Tailwind 负责响应式栅格与间距，这里负责一切「纸」的部分——纹理、撕边、
+ * 投影、手绘描边。
+ *
+ * 所有尺寸以 483×446 的纸为基准标定。卡片是一个容器查询上下文，字号与间距全部
+ * 按卡片宽度的比例给出（见 .km-node-card 的 font-size），于是无论视口多宽，
+ * 一张卡永远是同一张纸按比例缩放，而不是字号固定、版式被拉散。
+ */
+
+/* ===================== 设计令牌：浅色（默认） ===================== */
+
+:root {
+  /**
+   * 墙面与纸张。
+   *
+   * 底色比目标色亮几级：纹理贴图以 multiply 方式叠上去（见 .km-node-card::before），
+   * 底色 × 贴图之后才落到纸面 rgb(249,247,245)、墙面 rgb(243,240,236)。
+   */
+  --wall-base: #fbf8f4;
+  --paper-tint: #fefcfa;
+
+  /* 墨迹。取自设计稿标题笔画的实测色 #191918，按层级递减 */
+  --ink: #1e1e1c;
+  --ink-soft: #2c2c29;
+  --ink-muted: #4a4a45;
+  --ink-faint: #5a5a55;
+
+  /**
+   * 数据色。
+   *
+   * 装饰用色（进度条、边框、圆点）与文字用色分开：装饰不受 WCAG 对比度约束，
+   * 可以保持设计稿那种鲜亮，而同样的绿橙用来写字就过不了 AA，因此文字另给一档
+   * 更深的值。两者色相一致，看上去仍是同一个色系。
+   */
+  --c-cpu: #2158dc;
+  --c-mem: #8b52d2;
+  --c-disk: #ee7a33;
+  --c-online: #2f8b3c;
+  --c-warn: #d9a01b;
+  --c-danger: #d33a3a;
+
+  --c-disk-text: #c65c14;
+  --c-online-text: #1f7a31;
+
+  /* 卡片。--card-shadow 供便签、按钮等常规元素用；纸片本身走 --paper-shadow */
+  --card-shadow: 0 14px 34px rgba(40, 34, 26, 0.13),
+    0 2px 6px rgba(40, 34, 26, 0.1);
+  --paper-shadow: drop-shadow(0 10px 14px rgba(46, 38, 28, 0.17))
+    drop-shadow(0 2px 2px rgba(46, 38, 28, 0.14));
+  --paper-shadow-color: rgba(46, 38, 28, 0.2);
+  --paper-contact-shadow: rgba(46, 38, 28, 0.16);
+  --paper-offline-shadow-color: rgba(46, 38, 28, 0.12);
+  --paper-offline-contact-shadow: rgba(46, 38, 28, 0.1);
+  --paper-edge-tint: #e8e3dc;
+  --paper-edge-rim: rgba(91, 79, 63, 0.2);
+  --paper-fiber: rgba(230, 224, 215, 0.88);
+  /* Blender 素材纸面的实测色（0.9622, 0.9551, 0.9458），只用作素材到达前的垫色 */
+  --sheet-tint: #f5f4f1;
+  --card-radius: 3px;
+  --rule-color: rgba(48, 46, 42, 0.62);
+  --divider-color: rgba(48, 46, 42, 0.66);
+  --track-color: #c9c6c1;
+
+  /* 纸纹贴图的强度。1 = 与设计稿实测一致 */
+  --grain-opacity: 1;
+
+  /* 纸面受光处的高光：左上偏亮，模拟顶灯 */
+  --paper-light: rgba(255, 255, 255, 0.6);
+  --paper-light-color: #fff;
+  --paper-light-opacity: 0.6;
+  --paper-light-fade: 64%;
+
+  /* 字体 */
+  --font-hand: "Architects Daughter", "LXGW WenKai Subset", ui-sans-serif,
+    system-ui, sans-serif;
+  --font-meta: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto,
+    "Helvetica Neue", "LXGW WenKai Subset", sans-serif;
+
+  color-scheme: light;
+}
+
+/* ===================== 基础 ===================== */
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: var(--font-hand);
+  color: var(--ink);
+  background-color: var(--wall-base);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+/**
+ * 给所有手写文字补一点笔画重量。
+ *
+ * 设计稿的字是马克笔写的，笔画占字高的比例高于常规字体，而 Architects Daughter
+ * 只有一个字重、加不了粗。这里用与字号成比例的描边补上 0.03em：描边居中，字宽
+ * 整体加粗一档，字形本身不变形。单位必须是 em 而不是 px，缩放时笔画重量才恒定。
+ */
+.km-card-body,
+.km-navbar-title,
+.km-ui-button,
+.km-notice h2 {
+  -webkit-text-stroke: 0.028em currentColor;
+  paint-order: stroke fill;
+}
+
+/* 数字统一等宽，防止刷新时数值宽度跳动导致布局抖动 */
+.km-num {
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum" 1;
+}
+
+/* ===================== 背景墙 ===================== */
+
+/**
+ * 墙面。
+ *
+ * 与纸张同一套做法：底色 + 灰度 multiply 贴图。贴图由 scripts/assets/make-textures.py
+ * 按设计稿的径向功率谱、随机相位逆 FFT 合成，因此天然无缝。墙的斑驳比纸粗一个
+ * 数量级，正是这个差异让纸浮在墙前面。
+ */
+.km-layout {
+  min-height: 100vh;
+  min-height: 100dvh;
+  display: flex;
+  flex-direction: column;
+  background-color: var(--wall-base);
+  background-image: url("/assets/paper/textures/wall-grain.webp");
+  background-size: 512px 512px;
+  background-repeat: repeat;
+  background-blend-mode: multiply;
+  background-attachment: fixed;
+}
+
+.km-main {
+  flex: 1;
+  width: 100%;
+  /* 三列时卡片宽度落在 483 左右——与设计稿同一张纸的尺寸 */
+  max-width: 1680px;
+  margin: 0 auto;
+  padding: 26px 66px 10px;
+}
+
+/* ===================== 卡片墙 ===================== */
+
+.km-index-card-wall {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 42px 38px;
+  align-items: start;
+}
+
+@media (max-width: 1180px) {
+  .km-index-card-wall {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .km-main {
+    padding: 22px 40px 10px;
+  }
+}
+
+@media (max-width: 760px) {
+  .km-index-card-wall {
+    grid-template-columns: 1fr;
+    gap: 34px;
+  }
+  .km-main {
+    padding: 18px 18px 8px;
+  }
+}
+
+/* ===================== 便签卡片 ===================== */
+
+/**
+ * 卡片是整套排版的基准。
+ *
+ * `container-type: inline-size` 让内部所有尺寸都能用 cqi（卡片宽度的百分比）表达，
+ * 子元素只写比例，视口变宽时纸整个变大而不是版式被拉散。
+ *
+ * 两处容易踩空：
+ *
+ * 1. 容器自身不能用自己的 cqi——容器查询单位解析的是*祖先*容器，所以卡片的
+ *    内边距与基准字号必须落在内层的 .km-card-body 上；写在卡片自己身上会一路
+ *    回退到视口，7.2cqi 会算成 120px 而不是 35px。
+ * 2. inline-size 容器只隐含 layout / style / inline-size 收敛，不含 paint 收敛，
+ *    所以故意超出纸面的图钉、胶带不会被裁掉。
+ */
+.km-node-card {
+  --rotation: 0deg;
+  --paper-x: 0px;
+  --paper-y: 0px;
+  --paper-pivot-x: 50%;
+  container-type: inline-size;
+  position: relative;
+  display: block;
+  color: var(--ink);
+  text-decoration: none;
+  transform: translate3d(var(--paper-x), var(--paper-y), 0)
+    rotate(var(--rotation));
+  /* 支点跟随图钉/夹子位置，不再假定每张纸都从正中间悬挂。 */
+  transform-origin: var(--paper-pivot-x) 12%;
+  isolation: isolate;
+  transition: transform 0.25s ease;
+}
+
+/**
+ * 排版基准。
+ *
+ * font-size 取 3.31cqi，即 483px 宽的纸对应 16px；内边距 上 27 / 右 27 / 下 12 /
+ * 左 35 同样来自那张纸。clamp 的两端是可读性下限与观感上限。
+ *
+ * --su 是「卡片宽度的 1%」，卡片内按比例给出的尺寸都乘它。抽成变量是为了详情页：
+ * 那张纸有一千多像素宽，直接用 cqi 图钉会放大成一个盘子；详情页把 --su 钉死成
+ * 483px 宽卡片的比例，文具与国旗就还是原来那么大。
+ */
+.km-card-body,
+.km-stationery {
+  --su: 1cqi;
+}
+
+.km-card-body {
+  font-size: clamp(12.5px, 3.31cqi, 18.5px);
+  padding: calc(5.75 * var(--su)) calc(5.5 * var(--su)) calc(0.5 * var(--su))
+    calc(8.6 * var(--su));
+}
+
+@supports not (container-type: inline-size) {
+  /* 退化路径：按三列布局下的典型卡宽给一组定值，版式不至于崩 */
+  .km-card-body,
+  .km-stationery {
+    --su: 4.83px;
+  }
+  .km-card-body {
+    font-size: 16px;
+  }
+}
+
+/**
+ * Blender 纸张素材。
+ *
+ * 素材的画布比纸大一圈，那圈边距装的是纸投在墙上的影子，所以不能把素材拉满卡片
+ * 容器——那样纸会缩小并错位。容器按几何名义尺寸反推：画布 176×165.8 mm、纸
+ * 140×129.8 mm 且居中，于是
+ *
+ *     宽 176/140 = 125.714%       左 -(125.714-100)/2 = -12.857%
+ *     高 165.8/129.8 = 127.735%   上 -(127.735-100)/2 = -13.867%
+ *
+ * 用名义尺寸而不是量素材的 alpha 包围盒：包围盒会把撕边的外凸算进纸里，四张各不
+ * 相同，而撕边凸出卡片框一点点本来就是对的。数值由 scripts/assets/make-sheets.py
+ * 打印。
+ *
+ * `object-fit: fill` 是明写的：容器的宽高比由卡片内容决定，与素材画布并不相等，
+ * 这里就是要让它拉伸填满，而不是留边或裁切。
+ */
+.km-paper-sheet {
+  position: absolute;
+  width: 125.714%;
+  height: 127.735%;
+  /* Tailwind preflight 给所有 img 设了 max-width: 100%，会把上面那个
+     125.714% 截回卡片宽度——纸随之缩窄，右侧撕边会咬进「ONLINE」。 */
+  max-width: none;
+  left: -12.857%;
+  top: -13.867%;
+  z-index: -1;
+  object-fit: fill;
+  pointer-events: none;
+  /**
+   * 素材到达前先垫一张纯色纸，否则解码完成前满屏文字直接浮在墙上。
+   *
+   * 尺寸取 78.5% × 77.2% 而不是纸的名义 79.55% × 78.29%：按名义尺寸铺，撕边内凹
+   * 与四角磨损处会有不到 1% 的面积露在纸外面；收进一档后四张素材都不再露出。
+   * 颜色取素材纸面色，万一露出也看不出接缝。
+  */
+  background: linear-gradient(var(--sheet-tint), var(--sheet-tint)) center /
+    78.5% 77.2% no-repeat;
+}
+
+/**
+ * 程序化纸的分层。
+ *
+ * 单列窄屏，以及详情页与图表纸走这条路径——它们要么没有对应的素材，要么宽高比
+ * 与素材差得太远。轮廓由 PaperSurface 按节点 seed 逐张生成。
+ *
+ * 影子投在墙上、厚度夹在影子与正面之间、纸纹只铺正面：这三层分开以后，边缘才
+ * 不会像给一个白色 div 套了阴影。
+ */
+.km-paper-surface {
+  position: absolute;
+  inset: -3px;
+  width: calc(100% + 6px);
+  height: calc(100% + 6px);
+  z-index: -1;
+  overflow: visible;
+  pointer-events: none;
+  shape-rendering: geometricPrecision;
+}
+
+.km-paper-shadow-caster {
+  fill: var(--paper-edge-tint);
+  transform: translateY(var(--paper-depth, 1.5px));
+  filter: drop-shadow(
+      0 var(--paper-shadow-y, 10px) var(--paper-shadow-blur, 14px)
+        var(--paper-shadow-color)
+    )
+    drop-shadow(0 2px 1.6px var(--paper-contact-shadow));
+}
+
+.km-paper-thickness {
+  fill: var(--paper-edge-tint);
+  transform: translateY(var(--paper-depth, 1.5px));
+}
+
+.km-paper-face {
+  /* color-mix 不可用时仍必须有纸面，不能退回 SVG 默认的黑色填充。 */
+  fill: var(--paper-tint);
+  fill: color-mix(in srgb, var(--paper-tint) 97.5%, var(--paper-accent, #ddd));
+}
+
+.km-paper-grain {
+  opacity: var(--grain-opacity);
+  mix-blend-mode: multiply;
+}
+
+.km-paper-light {
+  opacity: 0.88;
+}
+
+.km-paper-rim,
+.km-paper-fiber {
+  fill: none;
+  vector-effect: non-scaling-stroke;
+}
+
+.km-paper-rim {
+  stroke: var(--paper-edge-rim);
+  stroke-width: 0.9px;
+}
+
+.km-paper-fiber {
+  stroke: var(--paper-fiber);
+  stroke-width: 0.62px;
+  stroke-linecap: round;
+}
+
+/* 可点击卡片的交互反馈：像被轻轻掀起一角 */
+a.km-node-card:hover,
+a.km-node-card:focus-visible {
+  transform: translate3d(var(--paper-x), calc(var(--paper-y) - 3px), 0)
+    rotate(var(--rotation));
+}
+
+a.km-node-card:focus-visible {
+  outline: 2px solid var(--c-cpu);
+  outline-offset: 5px;
+}
+
+/* 离线的纸片：褪色、投影收小，像久未更新被遗忘 */
+.km-node-card[data-online="false"] {
+  --paper-shadow-color: var(--paper-offline-shadow-color);
+  --paper-contact-shadow: var(--paper-offline-contact-shadow);
+}
+
+/* 素材的投影烘在 alpha 里，换不了颜色，改用 gamma 压半透明段（见 PaperEdge.tsx） */
+.km-node-card[data-online="false"] .km-paper-sheet {
+  filter: url(#km-sheet-offline);
+}
+
+.km-node-card[data-online="false"] .km-card-body {
+  opacity: 0.6;
+}
+
+/* ===================== 卡片头部 ===================== */
+
+/**
+ * 头部比指标区多缩进一段：标题与 OS 行的起点在卡片宽度的 12% 处，而下面三个指标
+ * 图标在 8.6% 处——图标是挂出去的，文字块自成一条更靠内的对齐线。
+ */
+.km-card-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.8em;
+  padding-left: calc(3.9 * var(--su));
+}
+
+/**
+ * 服务器名。
+ *
+ * 字号按设计稿的墨迹尺寸反推：483px 宽的卡片上「DMIT」占 101×31px，
+ * Architects Daughter 在 2.875em ≈ 46px 时正好是 102×30。
+ */
+.km-card-title {
+  margin: 0;
+  font-family: var(--font-hand);
+  font-size: 2.8em;
+  font-weight: 400;
+  line-height: 1;
+  letter-spacing: 0.005em;
+  color: var(--ink);
+  /* 下划线是绝对定位的，这里只留一线，免得把 OS 行推下去 */
+  padding-bottom: 0.06em;
+  min-width: 0;
+}
+
+/* 手绘下划线：跟着标题的实际文字宽度走，所以包在 inline-block 上 */
+.km-hand-underline {
+  position: relative;
+  display: inline-block;
+  max-width: 100%;
+}
+
+.km-underline {
+  position: absolute;
+  left: -2%;
+  width: 104%;
+  bottom: 0.01em;
+  height: 0.17em;
+  pointer-events: none;
+  overflow: visible;
+}
+
+/**
+ * OS 元信息：仍是手写笔迹，只是字号压到最小。
+ * 整行改用系统字体会像在纸上贴了张标签，与其余部分割裂。
+ */
+.km-card-meta {
+  margin: 0.3em 0 0;
+  font-family: var(--font-hand);
+  font-size: 1.01em;
+  font-weight: 400;
+  line-height: 1.25;
+  color: var(--ink-soft);
+}
+
+.km-card-meta-sep {
+  margin: 0 0.34em;
+  opacity: 0.55;
+}
+
+.km-card-header-right {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 0.5em;
+  flex-shrink: 0;
+}
+
+/**
+ * 国旗。
+ *
+ * 素材是 Twemoji 的平面旗（36×36 画布，旗面占中间 26 个单位），设计稿里则是
+ * 一面飘着的小旗：旗面有波浪、有白边、贴在纸上还有一点落影。这里用
+ * feDisplacementMap 把平面旗面吹起来，再用两层无偏移的白色 drop-shadow 描出
+ * 白边、一层深色 drop-shadow 落影。
+ *
+ * 波浪只作用在纵向：横向也扰动的话，星条与星环这类规则图案会歪成一团。
+ */
+.km-flag {
+  width: calc(9.4 * var(--su));
+  height: auto;
+  display: block;
+  /*
+   * 三步：先吹出波浪，再补色，最后描边加落影。
+   *
+   * Twemoji 的配色比设计稿淡且没有描边，贴在纸上会糊成一小块粉红。saturate 补色，
+   * 两层零偏移的深色 drop-shadow 描出那圈细黑边，第三层才是落在纸上的影子。
+   */
+  filter: url(#km-flag-wave) saturate(1.5) contrast(1.06)
+    drop-shadow(0 0 0.5px rgba(26, 24, 20, 0.95))
+    drop-shadow(0 0 0.5px rgba(26, 24, 20, 0.9))
+    drop-shadow(0 0 0.5px rgba(26, 24, 20, 0.7))
+    drop-shadow(0 1.2px 1.2px rgba(46, 38, 28, 0.3));
+  /* Twemoji 的旗面是 36:26，设计稿里那套 emoji 是 47:30，纵向压一点补上 */
+  transform: scaleY(0.87);
+}
+
+/* 地区无法解析成国旗时的回退（例如管理员填了自定义地区名） */
+.km-flag-fallback {
+  font-size: 1.05em;
+  color: var(--ink-muted);
+  letter-spacing: 0.04em;
+}
+
+.km-status {
+  display: flex;
+  align-items: center;
+  gap: 0.42em;
+  font-size: 1.01em;
+  letter-spacing: 0.03em;
+  color: var(--c-online-text);
+  white-space: nowrap;
+}
+
+.km-status[data-online="false"] {
+  color: var(--ink-faint);
+}
+
+.km-status::before {
+  content: "";
+  width: 0.42em;
+  height: 0.42em;
+  border-radius: 50%;
+  background: currentColor;
+  flex-shrink: 0;
+}
+
+/* ===================== 手绘线 ===================== */
+
+/* 底栏之上那道横线 */
+.km-rule {
+  display: block;
+  /* 略微探出文字栏：设计稿里这道线的两端比正文更靠外 */
+  width: calc(100% + 4.6 * var(--su));
+  margin: 0.16em 0 0.55em calc(-3 * var(--su));
+  height: 5px;
+  overflow: visible;
+}
+
+/* Load 与 Net Speed 之间的虚线 */
+.km-dashes {
+  display: block;
+  width: 100%;
+  height: 4px;
+  margin: 0.93em 0 0.34em;
+  overflow: visible;
+}
+
+/* ===================== 指标区 ===================== */
+
+/**
+ * 左右两栏的比例取自设计稿：竖线落在卡片宽度的 65.4% 处，
+ * 内容区（去掉左右内边距）因此被切成约 1.9 : 1。
+ */
+/**
+ * 两栏比例取自设计稿：竖线落在卡片宽度的 65.7% 处。
+ * 内容区从 8.6% 起到 94.5% 止，竖线因此落在栅格宽度的 66.4%。
+ */
+.km-card-metrics {
+  display: grid;
+  grid-template-columns: 66.4% minmax(0, 1fr);
+  margin-top: 0.84em;
+}
+
+/* 左栏内容不贴着中间那道竖线，留出设计稿里那段呼吸空间（12.5% 卡宽） */
+.km-metrics-left {
+  padding-right: calc(12.5 * var(--su));
+  min-width: 0;
+}
+
+/**
+ * 三个指标行等距排布。明细与条体都固定为上下两行，因此 CPU 核心数再短也不会
+ * 把进度条吸到同一行，实时数值变长时整张卡也不会发生纵向跳动。
+ */
+.km-metric {
+  min-height: 3.5em;
+}
+
+.km-metric-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.6em;
+}
+
+.km-metric-label {
+  display: flex;
+  align-items: center;
+  gap: 0.5em;
+  font-size: 1.11em;
+  color: var(--ink-soft);
+  min-width: 0;
+}
+
+.km-metric-value {
+  font-size: 1.72em;
+  color: var(--accent-text, var(--accent));
+  white-space: nowrap;
+  line-height: 1;
+}
+
+.km-metric-value-unit {
+  font-size: 0.64em;
+  margin-left: 0.18em;
+}
+
+/**
+ * 明细在上、进度条独占下一行。三类指标使用完全一致的节奏，尤其避免短小的
+ * CPU 核心数与进度条挤在同一行。
+ */
+.km-metric-detail {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 0.08em;
+  margin: 0.02em 0 0 2.1em;
+}
+
+.km-metric-meta {
+  font-size: 0.84em;
+  line-height: 1.1;
+  color: var(--ink-soft);
+  white-space: nowrap;
+}
+
+/**
+ * 加粗的蜡笔进度条。宽度填满指标内容区，不参与弹性换行；实际的不规则轮廓、
+ * 钝圆收笔与纸纤维刮痕由 SVG 负责。
+ */
+.km-bar {
+  width: 100%;
+  height: 0.68em;
+  min-width: 0;
+  display: block;
+  overflow: visible;
+}
+
+.km-bar-scratches {
+  fill: none;
+  stroke: var(--paper-tint);
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  vector-effect: non-scaling-stroke;
+}
+
+.km-bar-scratch--fine {
+  stroke-width: 0.3;
+  stroke-dasharray: 15 7 5 4;
+  stroke-dashoffset: -3;
+}
+
+.km-bar-scratch--coarse {
+  stroke-width: 0.62;
+  stroke-dasharray: 6 4 13 7;
+  stroke-dashoffset: -7;
+}
+
+.km-bar-scratches--track {
+  opacity: 0.24;
+}
+
+.km-bar-scratches--fill {
+  opacity: 0.46;
+}
+
+/*
+ * 数值变化时直接更新裁切宽度。曾经的 450ms width 补间会在每轮采样后连续触发
+ * 约 27 次布局/重绘；30 节点下把一次状态刷新放大成半秒主线程工作。
+ */
+.km-bar-clip {
+  transition: none;
+}
+
+.km-metric--cpu {
+  --accent: var(--c-cpu);
+}
+.km-metric--mem {
+  --accent: var(--c-mem);
+}
+.km-metric--disk {
+  --accent: var(--c-disk);
+  --accent-text: var(--c-disk-text);
+}
+
+.km-doodle {
+  width: 1.3em;
+  height: 1.3em;
+  flex-shrink: 0;
+  color: var(--ink);
+}
+
+/* ===================== 右侧栏：Load / Net Speed ===================== */
+
+.km-card-side {
+  position: relative;
+  padding-left: 0.32em;
+  min-width: 0;
+}
+
+/* 竖分隔线：线身随高度拉伸，末端的小箭头单独一层不参与拉伸 */
+.km-divider {
+  position: absolute;
+  /* 指标末端与 Load 图标之间的视觉中点，不贴着右栏文字。 */
+  left: -2em;
+  top: 0.1em;
+  bottom: 0.6em;
+  width: 8px;
+  pointer-events: none;
+}
+
+/**
+ * 线身。
+ *
+ * 高度必须显式给出：SVG 有来自 viewBox 的固有宽高比，只写 `width: 100%` 时
+ * `height: auto` 会按那个比例算出来（这里是 8px），而不是按 inset 撑满父级。
+ */
+.km-divider-line {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 100%;
+  height: calc(100% - 0.7em);
+  overflow: visible;
+}
+
+.km-divider-tip {
+  position: absolute;
+  left: 50%;
+  bottom: 0;
+  width: 10px;
+  height: 8px;
+  transform: translateX(-50%);
+  overflow: visible;
+}
+
+.km-side-label {
+  display: flex;
+  align-items: center;
+  gap: 0.5em;
+  font-size: 1.11em;
+  color: var(--ink-soft);
+  line-height: 1.1;
+}
+
+/* 仪表盘图标比其它图标大一圈——设计稿里就是这么画的 */
+.km-side-label .km-doodle {
+  width: 1.38em;
+  height: 1.38em;
+}
+
+/* 设计稿里 Load 的数值笔画与标签相当，并不加粗 */
+.km-side-value {
+  font-size: 1.55em;
+  margin: 0.1em 0 0 0.79em;
+  color: var(--ink);
+  line-height: 1;
+}
+
+.km-net-row {
+  display: flex;
+  align-items: center;
+  gap: 0.3em;
+  font-size: 1.44em;
+  margin: 0.33em 0 0;
+  white-space: nowrap;
+  line-height: 1;
+}
+
+/* 「Net Speed」与第一条速率之间比两条速率之间松一些，与设计稿一致 */
+.km-side-label + .km-net-row {
+  margin-top: 1.06em;
+}
+
+.km-net-row--up {
+  color: var(--c-cpu);
+}
+.km-net-row--down {
+  color: var(--c-online-text);
+}
+
+.km-net-arrow {
+  width: 0.72em;
+  height: 0.72em;
+  flex-shrink: 0;
+  color: currentColor;
+}
+
+.km-net-unit {
+  font-size: 0.51em;
+  color: var(--ink-soft);
+  margin-left: 0.1em;
+}
+
+/* ===================== 底部双栏 ===================== */
+
+/**
+ * 上传、下载在同一个宽栏中上下排列，信息量与右侧“到期 + 运行时长”接近。
+ * 这比把两组单行数据硬拆成三栏更紧凑，也保留了纸面左右分区的节奏。
+ */
+.km-card-bottom {
+  display: grid;
+  grid-template-columns: minmax(0, 1.62fr) minmax(7.7em, 1fr);
+  gap: 0 0.9em;
+  align-items: stretch;
+}
+
+.km-bottom-cell {
+  position: relative;
+  min-width: 0;
+}
+
+.km-bottom-cell--traffic {
+  align-self: stretch;
+  display: grid;
+  grid-template-rows: 1fr 1fr;
+  gap: 0;
+  padding: 0.08em 0.25em 0.12em 0;
+}
+
+.km-bottom-cell + .km-bottom-cell {
+  padding-left: 0.9em;
+}
+
+/* 轻微倾斜的双层铅笔痕，维持设计稿底栏的分栏节奏。 */
+.km-bottom-cell + .km-bottom-cell::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 0.08em;
+  bottom: 0.2em;
+  width: 1px;
+  background: var(--divider-color);
+  opacity: 0.72;
+  transform: rotate(-0.35deg);
+  box-shadow: 1.2px 0 color-mix(in srgb, var(--divider-color) 28%, transparent);
+}
+
+.km-bottom-label {
+  display: flex;
+  align-items: center;
+  gap: 0.5em;
+  font-size: 0.92em;
+  white-space: nowrap;
+  color: var(--ink-soft);
+  line-height: 1.1;
+}
+
+/**
+ * 流量区的两行都用“标签在左、数值在右”，充分利用横向空间。上下行之间留一条
+ * 两层浅铅笔痕，让它像手写表格而不是普通的 flex 列表。
+ */
+.km-bottom-cell--traffic .km-bottom-row {
+  position: relative;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  column-gap: 0.8em;
+  width: 100%;
+  padding: 0.15em 0.25em;
+}
+
+.km-bottom-cell--traffic .km-bottom-row + .km-bottom-row {
+  padding-top: 0.48em;
+}
+
+.km-bottom-cell--traffic .km-bottom-row + .km-bottom-row::before {
+  content: "";
+  position: absolute;
+  top: 0.08em;
+  left: 0.18em;
+  right: 0.1em;
+  height: 1px;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    var(--rule-color) 5%,
+    var(--rule-color) 94%,
+    transparent
+  );
+  opacity: 0.48;
+  transform: rotate(-0.18deg);
+  box-shadow: 0 1px color-mix(in srgb, var(--rule-color) 18%, transparent);
+}
+
+/* 底栏图标比指标区的小一号 */
+.km-bottom-label .km-doodle {
+  width: 1.28em;
+  height: 1.28em;
+}
+
+/* 累计流量使用方向明确的手写箭头；颜色与右侧实时网络速率保持同一套语义。 */
+.km-bottom-arrow {
+  width: 1.35em;
+  height: 1.35em;
+  flex-shrink: 0;
+}
+
+.km-bottom-row--out .km-bottom-arrow {
+  color: var(--c-cpu);
+}
+
+.km-bottom-row--in .km-bottom-arrow {
+  color: var(--c-online-text);
+}
+
+.km-bottom-value {
+  font-size: 1.13em;
+  margin: 0.3em 0 0 1.5em;
+  color: var(--ink);
+  white-space: nowrap;
+  line-height: 1.1;
+}
+
+.km-bottom-cell--traffic .km-bottom-value {
+  margin: 0;
+  font-size: 1.2em;
+  text-align: right;
+}
+
+/**
+ * 到期区。
+ *
+ * 有意不画设计稿里那个绿色手绘方框：底栏左右两格之间本来就有一道竖线，框线是
+ * 第二重分隔。内边距保留，让文字与那道竖线之间仍有呼吸。
+ */
+.km-expiry-box {
+  position: relative;
+  padding: 0.55em 0.7em 0.6em;
+}
+
+.km-expiry-label {
+  position: relative;
+  font-size: 0.9em;
+  color: var(--ink-soft);
+  line-height: 1.2;
+}
+
+/**
+ * 到期天数用墨色而不是绿色：这一格是常态信息，只有"快到期了"才值得抢眼，
+ * 平时就上绿色会让红黄两档警示失去对比。
+ */
+.km-expiry-value {
+  position: relative;
+  font-size: 1.24em;
+  color: var(--ink);
+  line-height: 1.15;
+  margin-top: 0.2em;
+}
+
+.km-expiry-value[data-urgent="true"] {
+  color: var(--c-danger);
+}
+
+.km-expiry-value[data-urgent="soon"] {
+  color: var(--c-warn);
+}
+
+/* 长期有效节点的手写 ∞：高度跟着所在行的字号走，与相邻数字等高 */
+.km-hand-infinity {
+  display: inline-block;
+  height: 0.86em;
+  width: auto;
+  fill: currentColor;
+  vertical-align: -0.06em;
+}
+
+.km-expiry-uptime {
+  position: relative;
+  margin-top: 0.6em;
+  font-size: 0.89em;
+  color: var(--ink-soft);
+  line-height: 1.2;
+}
+
+.km-expiry-uptime b {
+  display: block;
+  font-size: 1.32em;
+  margin-top: 0.12em;
+  color: var(--ink);
+  font-weight: 400;
+  margin-top: 0.05em;
+}
+
+/* ===================== 文具 ===================== */
+
+/**
+ * 文具的定位。
+ *
+ * 素材（黄铜图钉、镀铬回形针、牛皮胶带、和纸胶带、白图钉、黑长尾夹）自带高光与
+ * 材质，但投影有意不在素材里：影子物理上是 multiply 合成，抠成 RGBA 会变成一批
+ * 「颜色浅、alpha 低」的像素，只在浅色背景上成立，底色一深就成了一圈发光的雾。
+ * 交给 CSS 的 drop-shadow，半透明黑压暗底色，换什么底都对。
+ *
+ * 每一项的尺寸与落位取自设计稿：图钉整个压在纸面上、回形针上半截探出纸外、
+ * 长尾夹咬住纸的上缘、胶带横贴纸缘、和纸斜压左上角。
+ */
+.km-stationery {
+  position: absolute;
+  z-index: 5;
+  pointer-events: none;
+  filter: drop-shadow(0 1.5px 2px rgba(46, 38, 28, 0.28));
+}
+
+/* 黄铜图钉 40×55：整个压在纸面上 */
+.km-stationery--pin {
+  width: calc(8.3 * var(--su));
+  left: calc(2.5 * var(--su) + var(--stationery-offset, 0px));
+  top: calc(2.7 * var(--su));
+}
+
+/* 白图钉 55×61：钉在纸的上缘偏右 */
+.km-stationery--pin-white {
+  width: calc(11.4 * var(--su));
+  left: calc(45 * var(--su) + var(--stationery-offset, 0px));
+  top: calc(-1.6 * var(--su));
+}
+
+/**
+ * 回形针 55×93：上半截在纸外，下半截夹住纸。
+ *
+ * 横向必须压在标题起点的左边：标题从卡片宽度的 12% 处开始，针身有 11.4% 宽，
+ * 再往右一点就会把服务器名的首字母遮成半个，CCS 会读成「(CS」。
+ */
+.km-stationery--clip {
+  width: calc(11.4 * var(--su));
+  left: calc(0.6 * var(--su) + var(--stationery-offset, 0px));
+  top: calc(-3.5 * var(--su));
+}
+
+/* 长尾夹 86×66：黑色夹体咬住纸的上缘，镀铬手柄翘在纸外 */
+.km-stationery--binder {
+  width: calc(17.8 * var(--su));
+  left: calc(39.3 * var(--su) + var(--stationery-offset, 0px));
+  top: calc(-5.3 * var(--su));
+}
+
+/* 牛皮胶带 132×51：横贴纸缘，上下各压一半 */
+.km-stationery--tape {
+  width: calc(27.3 * var(--su));
+  left: calc(39.2 * var(--su) + var(--stationery-offset, 0px));
+  top: calc(-3.6 * var(--su));
+}
+
+/* 和纸胶带 113×90：斜贴左上角，压住纸角 */
+.km-stationery--washi {
+  width: calc(23.4 * var(--su));
+  left: calc(-5.4 * var(--su) + var(--stationery-offset, 0px));
+  top: calc(-2.9 * var(--su));
+}
+
+/* ===================== 页头 / 页脚 ===================== */
+
+.km-navbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+  width: 100%;
+  max-width: 1680px;
+  margin: 0 auto;
+  padding: 24px 66px 0;
+}
+
+.km-navbar-title {
+  margin: 0;
+  font-family: var(--font-hand);
+  font-size: 30px;
+  font-weight: 400;
+  line-height: 1.1;
+  color: var(--ink);
+}
+
+.km-navbar-subtitle {
+  margin: 3px 0 0;
+  font-size: 14px;
+  color: var(--ink-faint);
+  font-family: var(--font-hand);
+}
+
+.km-navbar-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+/* 页头按钮：像贴在墙上的小纸条 */
+.km-ui-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 13px;
+  font-family: var(--font-hand);
+  font-size: 15px;
+  color: var(--ink-soft);
+  background: var(--paper-tint);
+  border: none;
+  border-radius: 3px;
+  box-shadow: 0 2px 6px rgba(46, 38, 28, 0.12);
+  cursor: pointer;
+  transition: transform 0.18s ease, box-shadow 0.18s ease;
+}
+
+.km-ui-button:hover {
+  transform: translateY(-1px) rotate(-0.5deg);
+  box-shadow: 0 4px 10px rgba(46, 38, 28, 0.16);
+}
+
+.km-ui-button:focus-visible {
+  outline: 2px solid var(--c-cpu);
+  outline-offset: 3px;
+}
+
+.km-admin-link {
+  text-decoration: none;
+}
+
+.km-admin-link span {
+  color: var(--c-cpu);
+  font-size: 0.9em;
+}
+
+.km-footer {
+  width: 100%;
+  max-width: 1680px;
+  margin: 0 auto;
+  padding: 26px 66px 24px;
+  font-family: var(--font-hand);
+  font-size: 14px;
+  color: var(--ink-faint);
+  text-align: center;
+}
+
+.km-footer a {
+  color: inherit;
+}
+
+@media (max-width: 760px) {
+  .km-navbar,
+  .km-footer {
+    padding-left: 18px;
+    padding-right: 18px;
+  }
+}
+
+/* ===================== 状态页 ===================== */
+
+.km-notice {
+  position: relative;
+  max-width: 460px;
+  margin: 70px auto;
+  padding: 32px 34px;
+  text-align: center;
+  transform: rotate(-0.5deg);
+  isolation: isolate;
+}
+
+/* 同上：纸面走伪元素，与卡片共用同一套材质 */
+.km-notice::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  border-radius: var(--card-radius);
+  background-color: var(--paper-tint);
+  background-image: url("/assets/paper/textures/paper-grain.webp"),
+    radial-gradient(
+      132% 104% at 20% -4%,
+      var(--paper-light),
+      transparent var(--paper-light-fade)
+    );
+  background-size: 512px 512px, 100% 100%;
+  background-repeat: repeat, no-repeat;
+  background-blend-mode: multiply, normal;
+  filter: var(--paper-shadow);
+}
+
+.km-notice h2 {
+  margin: 0 0 8px;
+  font-family: var(--font-hand);
+  font-size: 30px;
+  font-weight: 400;
+  color: var(--ink);
+}
+
+.km-notice p {
+  margin: 0;
+  font-size: 16px;
+  color: var(--ink-muted);
+}
+
+.km-notice a {
+  display: inline-block;
+  margin-top: 16px;
+  color: var(--c-cpu);
+}
+
+/* ===================== 无障碍与降级 ===================== */
+
+.km-visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/**
+ * 尊重「减少动态效果」：关掉一切过渡与位移。
+ * 数值仍然照常更新，只是不再有补间动画。
+ */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+  a.km-node-card:hover,
+  a.km-node-card:focus-visible {
+    transform: translate3d(var(--paper-x), var(--paper-y), 0)
+      rotate(var(--rotation));
+  }
+}
+
+/* 高对比度偏好下，撤掉纹理与旋转，优先保证可读性 */
+@media (prefers-contrast: more) {
+  .km-node-card {
+    --rotation: 0deg !important;
+  }
+  .km-paper-grain,
+  .km-paper-light,
+  .km-paper-fiber {
+    display: none;
+  }
+  .km-paper-shadow-caster {
+    filter: none;
+  }
+}
+
+/* ===================== 节点详情页 ===================== */
+
+.km-page-instance {
+  display: flex;
+  flex-direction: column;
+  gap: 30px;
+  padding-top: 14px;
+}
+
+/**
+ * 详情页顶部是一张更大的纸，复用卡片的全部纸张效果。
+ *
+ * 这张纸有一千多像素宽，按比例算尺寸的东西全都得钉死：--su 固定成 483px 宽
+ * 卡片的比例，图钉、胶带、国旗才不会跟着纸一起放大成盘子那么大。
+ */
+.km-instance-sheet > .km-card-body,
+.km-instance-sheet > .km-stationery {
+  --su: 4.83px;
+}
+
+.km-instance-sheet > .km-card-body {
+  padding: 30px 36px 26px;
+  font-size: 16.5px;
+}
+
+.km-instance-stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(178px, 1fr));
+  gap: 18px 26px;
+  margin-top: 16px;
+}
+
+.km-stat {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 0;
+}
+
+.km-stat-label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 16px;
+  color: var(--ink-soft);
+}
+
+.km-stat-value {
+  font-size: 24px;
+  color: var(--ink);
+  white-space: nowrap;
+}
+
+.km-stat-meta {
+  font-size: 14px;
+  color: var(--ink-muted);
+  white-space: nowrap;
+}
+
+.km-instance-toolbar {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.km-instance-section-title {
+  margin: 0;
+  font-family: var(--font-hand);
+  font-size: 25px;
+  font-weight: 400;
+  color: var(--ink);
+}
+
+.km-range-picker {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+/* 选中的时间窗：像被笔圈出来 */
+.km-range-picker .km-ui-button[data-active="true"] {
+  color: var(--c-cpu);
+  box-shadow: 0 2px 6px rgba(46, 38, 28, 0.12),
+    inset 0 0 0 1.5px color-mix(in srgb, var(--c-cpu) 42%, transparent);
+}
+
+/* 系统曲线与延迟曲线分开成两张索引签，不让多任务延迟线挤在小卡片里。 */
+.km-history-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 18px;
+  margin-top: 10px;
+}
+
+.km-history-tab {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 3px 2px 7px;
+  font-family: var(--font-hand);
+  font-size: 17px;
+  color: var(--ink-muted);
+  background: none;
+  border: 0;
+  cursor: pointer;
+}
+
+.km-history-tab .km-doodle {
+  width: 1.12em;
+  height: 1.12em;
+}
+
+.km-history-tab::after {
+  content: "";
+  position: absolute;
+  left: 4%;
+  right: -3%;
+  bottom: 1px;
+  height: 2px;
+  background: var(--c-cpu);
+  border-radius: 50%;
+  opacity: 0;
+  transform: rotate(-0.8deg) scaleX(0.72);
+  transform-origin: left;
+  transition: opacity 0.18s ease, transform 0.18s ease;
+}
+
+.km-history-tab:hover,
+.km-history-tab[data-active="true"] {
+  color: var(--ink);
+}
+
+.km-history-tab[data-active="true"]::after {
+  opacity: 0.9;
+  transform: rotate(-0.8deg) scaleX(1);
+}
+
+.km-history-tab:focus-visible {
+  outline: 2px solid var(--c-cpu);
+  outline-offset: 3px;
+  border-radius: 2px;
+}
+
+.km-instance-charts {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(420px, 1fr));
+  gap: 24px;
+}
+
+.km-instance-charts--latency {
+  display: block;
+}
+
+@media (max-width: 760px) {
+  .km-instance-charts {
+    grid-template-columns: 1fr;
+  }
+  .km-instance-sheet > .km-card-body {
+    padding: 24px 20px 20px;
+  }
+}
+
+/* 图表也画在独立撕下的纸上，与首页复用同一套纸面分层。 */
+.km-chart-card {
+  position: relative;
+  padding: 20px 22px 16px;
+  isolation: isolate;
+}
+
+.km-chart-title {
+  margin: 0 0 10px;
+  font-family: var(--font-hand);
+  font-size: 19px;
+  color: var(--ink-soft);
+}
+
+.km-chart-card--latency {
+  padding: 24px 28px 20px;
+  /* 首次进入延迟 Tab 时也先占住最终图表高度，接口返回后纸片不会突然撑开。 */
+  min-height: 500px;
+}
+
+.km-chart-card--latency .km-chart-title {
+  font-size: 22px;
+}
+
+.km-chart-card--latency .km-load-chart {
+  min-height: 300px;
+}
+
+.km-chart-card--latency > .km-chart-empty {
+  display: grid;
+  min-height: 390px;
+  margin: 0;
+  place-items: center;
+}
+
+/* 双手柄延迟选区：灰线是完整窗口，彩色铅笔痕是当前选中窗口。 */
+.km-time-brush {
+  position: relative;
+  height: 82px;
+  margin: 2px 4px 12px;
+}
+
+.km-time-brush-track {
+  position: absolute;
+  z-index: 1;
+  left: 10px;
+  right: 10px;
+  top: 19px;
+  height: 3px;
+  border-radius: 50%;
+  background: var(--track-color);
+  transform: rotate(-0.08deg);
+}
+
+.km-time-brush-track::after {
+  content: "";
+  position: absolute;
+  left: var(--range-start);
+  right: calc(100% - var(--range-end));
+  top: -1px;
+  height: 4px;
+  border-radius: 55% 45% 50% 48%;
+  background: var(--c-cpu);
+  opacity: 0.84;
+  transform: rotate(0.08deg);
+}
+
+.km-time-brush-input {
+  position: absolute;
+  z-index: 2;
+  left: 0;
+  top: 7px;
+  width: 100%;
+  height: 28px;
+  margin: 0;
+  appearance: none;
+  -webkit-appearance: none;
+  background: transparent;
+  pointer-events: none;
+}
+
+.km-time-brush-input[data-handle="start"] {
+  z-index: 3;
+}
+
+.km-time-brush-input::-webkit-slider-runnable-track {
+  height: 3px;
+  background: transparent;
+  border: 0;
+}
+
+.km-time-brush-input::-moz-range-track {
+  height: 3px;
+  background: transparent;
+  border: 0;
+}
+
+.km-time-brush-input::-webkit-slider-thumb {
+  width: 20px;
+  height: 20px;
+  margin-top: -8px;
+  appearance: none;
+  -webkit-appearance: none;
+  border: 2px solid var(--c-cpu);
+  border-radius: 47% 53% 46% 54%;
+  background: var(--paper-tint);
+  box-shadow: 0 2px 5px rgba(46, 38, 28, 0.18);
+  cursor: ew-resize;
+  pointer-events: auto;
+}
+
+.km-time-brush-input::-moz-range-thumb {
+  width: 17px;
+  height: 17px;
+  border: 2px solid var(--c-cpu);
+  border-radius: 47% 53% 46% 54%;
+  background: var(--paper-tint);
+  box-shadow: 0 2px 5px rgba(46, 38, 28, 0.18);
+  cursor: ew-resize;
+  pointer-events: auto;
+}
+
+.km-time-brush-input:focus-visible::-webkit-slider-thumb {
+  outline: 2px solid var(--ink);
+  outline-offset: 3px;
+}
+
+.km-time-brush-input:focus-visible::-moz-range-thumb {
+  outline: 2px solid var(--ink);
+  outline-offset: 3px;
+}
+
+.km-time-brush-labels {
+  position: absolute;
+  left: 10px;
+  right: 10px;
+  top: 44px;
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 16px;
+  color: var(--ink-muted);
+  font-size: 13px;
+}
+
+.km-time-brush-labels small {
+  color: var(--ink-faint);
+  font-size: 12px;
+}
+
+@media (max-width: 760px) {
+  .km-chart-card--latency {
+    padding: 20px 14px 16px;
+  }
+  .km-time-brush-labels {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 2px;
+  }
+}
+
+.km-load-chart {
+  width: 100%;
+  min-height: 220px;
+}
+
+/* uPlot 自带样式偏向常规仪表盘，这里统一到本主题的字体与墨色 */
+.km-load-chart .u-axis,
+.km-load-chart .u-legend {
+  font-family: var(--font-hand);
+  color: var(--ink-muted);
+}
+
+.km-load-chart .u-cursor-pt {
+  display: none;
+}
+
+.km-chart-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 16px;
+  margin-top: 10px;
+  font-size: 14px;
+  color: var(--ink-muted);
+}
+
+.km-chart-legend-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+}
+
+.km-chart-legend-item i {
+  width: 14px;
+  height: 3px;
+  border-radius: 2px;
+  display: inline-block;
+}
+
+.km-chart-empty {
+  margin: 40px 0;
+  text-align: center;
+  color: var(--ink-faint);
+  font-size: 15px;
+}
+
+.km-instance-back {
+  margin: 0 0 8px;
+  font-size: 15px;
+}
+
+.km-instance-back a {
+  color: var(--c-cpu);
+}
+
+.km-navbar-home {
+  text-decoration: none;
+}
+
+.km-navbar-home:hover {
+  text-decoration: underline;
+  text-decoration-style: wavy;
+  text-underline-offset: 6px;
+}
+
+/* ===================== 窄屏适配 ===================== */
+
+/**
+ * 手机上双栏指标会把左栏压到放不下「Memory」加数值，标签会被数值盖住。
+ * 这里把卡片改成纵向单栏：Load / Net Speed 落到指标下方，
+ * 竖线换成横线，底栏的流量区与到期框也依次独占一行。
+ */
+@container (max-width: 380px) {
+  .km-card-metrics {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .km-metrics-left {
+    padding-right: 0;
+  }
+
+  .km-card-side {
+    padding-left: 0;
+    padding-top: 0.9em;
+    margin-top: 0.9em;
+    border-top: 1px solid var(--divider-color);
+  }
+
+  .km-divider {
+    display: none;
+  }
+
+  .km-card-bottom {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 0.6em;
+  }
+
+  .km-bottom-cell + .km-bottom-cell {
+    padding-left: 0;
+  }
+
+  .km-bottom-cell + .km-bottom-cell::before {
+    display: none;
+  }
+
+  /* 到期方框完整宽度落到流量区下方，避免窄屏文字被挤成竖排。 */
+  .km-bottom-cell--expiry {
+    grid-column: auto;
+  }
+
+  .km-bottom-cell--traffic + .km-bottom-cell--expiry {
+    margin-top: 0.6em;
+  }
+}

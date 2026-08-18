@@ -1,0 +1,9 @@
+{
+  "name": "Adhesive Note",
+  "short": "AdhesiveNote",
+  "description": "把每台服务器变成一张贴在墙上的手写便利贴",
+  "version": "1.0.0",
+  "author": "stqfdyr",
+  "url": "https://github.com/stqfdyr/komari-theme-adhesive-note",
+  "preview": "preview.webp"
+}

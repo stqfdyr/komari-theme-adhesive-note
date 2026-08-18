@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="shortcut icon" href="/favicon.ico" type="image/x-icon" />
+    <!-- 放在 /assets/ 下：与 Komari 官方主题保持同一静态资源足迹，
+         严格白名单型的反代/WAF 通常只放行 /assets/* -->
+    <link rel="apple-touch-icon" href="/assets/apple-touch-icon.png" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <!-- 下面这句描述必须逐字保留：Komari 服务端按字符串替换成站点自定义描述 -->
+    <meta name="description" content="A simple server monitor tool." />
+    <!-- 与 paper.css 的 --wall-base 一致 -->
+    <meta name="theme-color" content="#fbf8f4" />
+    <style>
+      /* 首帧就铺上墙色，避免 CSS 到达前闪一下浏览器默认白 */
+      :where(html) {
+        background: #fbf8f4;
+        color-scheme: light;
+      }
+      html,
+      body,
+      #root {
+        min-height: 100%;
+      }
+      body {
+        margin: 0;
+      }
+    </style>
+    <!-- 下面这个标题必须逐字保留：Komari 服务端按字符串替换成站点自定义标题 -->
+    <title>Komari Monitor</title>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>

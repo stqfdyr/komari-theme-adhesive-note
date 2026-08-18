@@ -1,0 +1,94 @@
+{
+  "common": {
+    "online": "ONLINE",
+    "offline": "OFFLINE",
+    "unknown": "—",
+    "loading": "Loading…",
+    "retry": "Retry",
+    "back": "Back",
+    "cores": "cores",
+    "core": "core",
+    "admin": "Admin"
+  },
+  "metric": {
+    "cpu": "CPU",
+    "memory": "Memory",
+    "disk": "Disk",
+    "load": "Load",
+    "netSpeed": "Net Speed",
+    "upload": "Upload",
+    "download": "Download",
+    "trafficOut": "Traffic Out",
+    "trafficIn": "Traffic In",
+    "expiresIn": "Expires in",
+    "expired": "Expired",
+    "neverExpires": "No expiry",
+    "uptime": "Uptime",
+    "swap": "Swap",
+    "process": "Processes",
+    "connections": "Connections",
+    "temperature": "Temp"
+  },
+  "unit": {
+    "days": "days",
+    "hours": "hours",
+    "minutes": "min",
+    "ms": "ms"
+  },
+  "index": {
+    "title": "Server Status",
+    "empty": "No nodes yet",
+    "emptyHint": "Add a node in the admin panel and a paper note will show up here.",
+    "loadFailed": "Failed to load data",
+    "nodeCount": "{{count}} nodes",
+    "onlineCount": "{{online}} / {{total}} online"
+  },
+  "instance": {
+    "notFound": "Node not found",
+    "notFoundHint": "It may have been removed, or you may not have permission to view it.",
+    "backToIndex": "Back to index",
+    "overview": "Overview",
+    "charts": "Monitoring charts",
+    "systemTab": "System metrics",
+    "latencyTab": "Network latency",
+    "cpuChart": "CPU usage",
+    "memoryChart": "Memory usage",
+    "diskChart": "Disk usage",
+    "networkChart": "Network speed",
+    "loadChart": "System load",
+    "pingChart": "Latency",
+    "latencyRange": "Latency chart selection",
+    "rangeStart": "Selection start",
+    "rangeEnd": "Selection end",
+    "selectedRange": "Range: {{start}} — {{end}}",
+    "adaptiveDensity": "Data density adapts to the selected range",
+    "noData": "No data in this range",
+    "recordDisabled": "History recording is disabled on this site",
+    "system": "OS",
+    "kernel": "Kernel",
+    "arch": "Arch",
+    "virtualization": "Virtualization",
+    "cpuModel": "CPU",
+    "price": "Price",
+    "billingCycle": "Billing cycle",
+    "free": "Free",
+    "perDays": "every {{count}} days"
+  },
+  "range": {
+    "realtime": "Live",
+    "1h": "1h",
+    "4h": "4h",
+    "24h": "24h",
+    "7d": "7d",
+    "hours": "{{count}}h",
+    "days": "{{count}}d"
+  },
+  "footer": {
+    "poweredBy": "Powered by Komari Monitor."
+  },
+  "notFound": {
+    "title": "This note is missing",
+    "hint": "The address may be wrong.",
+    "home": "Back to index"
+  }
+}

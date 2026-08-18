@@ -1,0 +1,37 @@
+/**
+ * 字体声明。
+ *
+ * 全部自托管：主题包必须离线可用，不能依赖 Google Fonts 之类的第三方 CDN
+ * （国内访问不稳定，且会向第三方泄露访客信息）。
+ *
+ * 字体文件放在 public/assets/fonts/，由 scripts/subset-fonts.mjs 生成与同步：
+ * - Architects Daughter 取自 @fontsource 的 latin 子集（SIL OFL-1.1）
+ * - 霞鹜文楷经 fontTools 子集化，只保留常用汉字与标点
+ *
+ * 全站只用 Architects Daughter 一款拉丁手写体：它的字形与字距最贴近设计稿——
+ * 直立而非右倾、单层 a、D 的下方开口、宽而均匀的字距。标题与正文同源，整面
+ * 卡片墙才像是同一只手写出来的。
+ *
+ * 字体度量（unitsPerEm 1024）：capHeight 675、xHeight 439，即 cap/em = 0.659。
+ * paper.css 里的字号都是按这个比例从设计稿的墨迹高度反推的。
+ */
+
+@font-face {
+  font-family: "Architects Daughter";
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url("/assets/fonts/architects-daughter-latin-400-normal.woff2")
+    format("woff2");
+}
+
+/* 中文手写楷体：霞鹜文楷子集，与纸张风格契合 */
+@font-face {
+  font-family: "LXGW WenKai Subset";
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url("/assets/fonts/lxgw-wenkai-subset.woff2") format("woff2");
+  /* 只在渲染 CJK 时才下载，纯英文站点完全不会请求这个文件 */
+  unicode-range: U+2E80-9FFF, U+3000-303F, U+FF00-FFEF, U+4E00-9FFF;
+}

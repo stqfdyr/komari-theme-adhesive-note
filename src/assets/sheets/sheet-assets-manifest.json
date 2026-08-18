@@ -1,0 +1,101 @@
+{
+  "schema": 1,
+  "canvas_mm": [
+    176.0,
+    165.8
+  ],
+  "sheet_mm": [
+    140.0,
+    129.8
+  ],
+  "quality": 94,
+  "alpha_quality": 100,
+  "method": 6,
+  "cwebp": "/opt/homebrew/bin/cwebp",
+  "variants": {
+    "a-left-point": {
+      "source": "paper-a-left-point-layered.png",
+      "source_sha256": "5e5a55343e59e7fd365235995319e1c8d19d7d796998fcbbee5f77d4844702c0",
+      "edge_max": 0.0,
+      "derived": {
+        "@1x": {
+          "name": "paper-a-left-point@1x.webp",
+          "width": 618,
+          "height": 582,
+          "bytes": 62978,
+          "sha256": "230e2af36a7630ee74223e5170c0acf3ea8d5c753df10fa3f82253ff204b2f6c"
+        },
+        "@2x": {
+          "name": "paper-a-left-point@2x.webp",
+          "width": 1236,
+          "height": 1164,
+          "bytes": 214454,
+          "sha256": "4ec2cbad711f2a0cacc08926d45d4731e65d75cff9e5ddac165e1560094fd964"
+        }
+      }
+    },
+    "b-left-band": {
+      "source": "paper-b-left-band-layered.png",
+      "source_sha256": "a40572fe94a3321a3128414f38a28e994a94ce758570b11825b60dbc3e1d2b11",
+      "edge_max": 0.0,
+      "derived": {
+        "@1x": {
+          "name": "paper-b-left-band@1x.webp",
+          "width": 618,
+          "height": 582,
+          "bytes": 67562,
+          "sha256": "c8ea7837544424e05b7b3650fd022fd5dbb59e756c7a13829a65fbe3ba3b855d"
+        },
+        "@2x": {
+          "name": "paper-b-left-band@2x.webp",
+          "width": 1236,
+          "height": 1164,
+          "bytes": 224944,
+          "sha256": "5b1c71007d4a9335b9172cc855ae2f160354d81c944ff42c1c512388a581cc29"
+        }
+      }
+    },
+    "c-mid-point": {
+      "source": "paper-c-mid-point-layered.png",
+      "source_sha256": "cbe11b6c2c084ab3b485392b070e46e3138f686299f112d073225f046c77bf32",
+      "edge_max": 0.0,
+      "derived": {
+        "@1x": {
+          "name": "paper-c-mid-point@1x.webp",
+          "width": 618,
+          "height": 582,
+          "bytes": 65776,
+          "sha256": "6f482c73a9404e3706dd50002e3f6cfcae131ecd58382baff0156ece29dac4c2"
+        },
+        "@2x": {
+          "name": "paper-c-mid-point@2x.webp",
+          "width": 1236,
+          "height": 1164,
+          "bytes": 223326,
+          "sha256": "97060226f2c4ab90ebccb929af87c1037d85a0d730418ca708c4ec34880daf5a"
+        }
+      }
+    },
+    "d-mid-band": {
+      "source": "paper-d-mid-band-layered.png",
+      "source_sha256": "2b8c5b97a2d15f6e09f4627932a4d7f654e3f9c900f2ba324080a933d30c110a",
+      "edge_max": 0.0,
+      "derived": {
+        "@1x": {
+          "name": "paper-d-mid-band@1x.webp",
+          "width": 618,
+          "height": 582,
+          "bytes": 67036,
+          "sha256": "2c7ef8d88f6ed70a8fc662526af52bc14069626d155008aa4a1b68c125528327"
+        },
+        "@2x": {
+          "name": "paper-d-mid-band@2x.webp",
+          "width": 1236,
+          "height": 1164,
+          "bytes": 223602,
+          "sha256": "4226198a16b0674b5c74103314559dee29c3aae47f3d5f536c40079c8d8769ed"
+        }
+      }
+    }
+  }
+}
